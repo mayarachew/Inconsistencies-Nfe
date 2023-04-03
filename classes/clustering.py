@@ -5,7 +5,8 @@ import matplotlib as mpl
 import plotly.express as px
 import seaborn as sns
 from sklearn import metrics
-from sklearn.cluster import AgglomerativeClustering, MeanShift
+from sklearn.cluster import KMeans, AgglomerativeClustering, SpectralClustering, MeanShift
+from sklearn.mixture import GaussianMixture
 from kmodes.kmodes import KModes
 from sklearn.manifold import MDS
 import math
@@ -15,14 +16,14 @@ SEED = 42
 class Clustering:
     def print_calinski_harabasz_score(X_norm, clusters_predicted):
         metric_CH = metrics.calinski_harabasz_score(X_norm, clusters_predicted)
-        print("Calinski-Harabasz Index: {:.3f}".format(metric_CH)+'\n')
+        print("Calinski-Harabasz Index: {:.3f}".format(metric_CH))
         return
     
     def print_silhouette_score(X, X_norm, clusters_predicted):
         # Get a sample to calculate silhouette coefficient
         muestra_silhoutte = 0.5 if (len(X) > 10000) else 1.0 
         metric_SC = metrics.silhouette_score(X_norm, clusters_predicted, metric='euclidean', sample_size=math.floor(muestra_silhoutte*len(X)), random_state=123456)
-        print("Silhouette Coefficient: {:.5f}".format(metric_SC)+'\n')
+        print("Silhouette Coefficient: {:.5f}".format(metric_SC))
 
         metric_SC_samples = metrics.silhouette_samples(X_norm, clusters_predicted, metric='euclidean')
 
@@ -133,10 +134,10 @@ class Clustering:
             ticktext=["Cluster "+str(i+1) for i in range(num_clusters)],
             lenmode="pixels", len=500,
         ))
-
+        
         fig.show()
 
-        return
+        return fig
 
 
     def apply_meanshift(X, X_normalizado):
@@ -203,3 +204,63 @@ class Clustering:
     # - https://datascience.stackexchange.com/questions/22/k-means-clustering-for-mixed-numeric-and-categorical-data
     # - https://cse.hkust.edu.hk/~qyang/Teaching/537/Papers/huang98extensions.pdf
     # - https://pypi.org/project/kmodes/
+
+    def apply_kmeans(X, X_normalizado, num_clusters):
+        t = time.time()
+
+        k_means = KMeans(init='k-means++', n_clusters=num_clusters, n_init=5, random_state=SEED)
+        clusters_predicted = k_means.fit_predict(X_normalizado)
+
+        tiempo = time.time() - t
+        print("Tempo de execução: {:.2f} segundos".format(tiempo))
+
+        centers = pd.DataFrame(k_means.cluster_centers_,columns=list(X))
+        clusters = pd.DataFrame(clusters_predicted, index=X.index, columns=['cluster'])
+
+        X_clustering = pd.concat([X, clusters], axis=1)
+
+        print("\nTamanho de cada cluster:")
+        size = clusters['cluster'].value_counts()
+        for num, i in size.items():
+            print('%s: %5d (%5.2f%%)' % (num, i, 100*i/len(clusters)))
+
+        size = size.sort_index()
+
+        return  X_clustering, clusters_predicted, clusters, centers, size
+    
+
+    def apply_gaussianmixture(X, X_normalizado, num_clusters):
+        t = time.time()
+
+        cluster_model = GaussianMixture(n_components=num_clusters, random_state=SEED)
+        clusters_predicted = cluster_model.fit_predict(X_normalizado)
+
+        tiempo = time.time() - t
+        print("Tempo de execução: {:.2f} segundos".format(tiempo))
+
+        clusters = pd.DataFrame(clusters_predicted, index=X.index, columns=['cluster'])
+        X_clustering = pd.concat([X, clusters], axis=1)
+
+        print("Tamanho de cada cluster:")
+        size = clusters['cluster'].value_counts()
+        for num, i in size.items():
+            print('%s: %5d (%5.2f%%)' % (num, i, 100*i/len(clusters)))
+
+        size = size.sort_index()
+
+        return  X_clustering, clusters_predicted, clusters, size
+    
+
+    def apply_spectral(X, X_normalizado, num_clusters):
+        t = time.time()
+
+        cluster_model = SpectralClustering(n_clusters=num_clusters, random_state=SEED)
+        clusters_predicted = cluster_model.fit_predict(X_normalizado)
+
+        tiempo = time.time() - t
+        print("Tiempo de ejecución: {:.2f} segundos".format(tiempo))
+
+        clusters = pd.DataFrame(clusters_predicted, index=X.index, columns=['cluster'])
+        X_clustering = pd.concat([X, clusters], axis=1)
+
+        return X_clustering, clusters_predicted, clusters
