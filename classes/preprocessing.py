@@ -263,8 +263,9 @@ class Preprocessing:
 
 
     def smote(X, y):
-        X_resampled, y_resampled = SMOTE(sampling_strategy='minority', random_state=SEED_VAL).fit_resample(X, y)
-        
+        X_resampled, y_resampled = SMOTE(sampling_strategy='not majority', random_state=SEED).fit_resample(X, y)
+        # 'not majority': resample all classes but the majority class
+
         return X_resampled, y_resampled
     
 
