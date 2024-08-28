@@ -30,21 +30,35 @@ class Preprocessing:
         pp_text = re.sub(r'\n', '', text)
         pp_text = re.sub(r'\d+[.\d*]*\:+', '', pp_text)
         return pp_text
+    
+
+    def remove_numbers(text):
+        pp_text = re.sub(r'\n', '', text)
+        pp_text = re.sub(r'[\d.]*[\d]+[,\d]*', '', pp_text)
+        return pp_text
 
 
     def replace_quantity_values(text):
-        pp_text = re.sub(r'\d+[.]*[,]*[\d]* *[ML|ml|GM|gm|GR|gr|kg|Kg|KG|L|l|ML|ml|MM|mm|%|unds|und|un|UNDS|UND|UN]+', ' QUANTITY ', text)
-        pp_text = re.sub(r'\d+[x|X]+\d+', ' QUANTITY ', pp_text)
+        pp_text = re.sub(r' +(gm|gr|kg|mm|%) +', ' QUANTIDADE ', text)
+        pp_text = re.sub(r' +(x) +', '', pp_text)
+        return pp_text
+
+
+    def replace_unity_values(text):
+        pp_text = re.sub(r' +(unds|und|un) +', ' UNIDADE ', text)
+        pp_text = re.sub(r' +(unds|und|un) +', ' UNIDADE ', text)
+        return pp_text
+    
+    
+    def replace_liquid_values(text):
+        pp_text = re.sub(r' +(L|l|ML|ml) +', ' LÍQUIDO ', text)
+        pp_text = re.sub(r' *(L|l|ML|ml) +', ' LÍQUIDO ', text)
         return pp_text
 
 
     def replace_size_values(text):
-        pp_text = re.sub(r' [XP|xp|PP|pp|M|m|G|g|GG|gg|XG|xg] ', ' SIZE ', text)
-        return pp_text
-
-
-    def remove_numbers(text):
-        pp_text = re.sub(r'\d+',' ', text)
+        pp_text = re.sub(r' +(xp|pp|m|cm|g|gg|xg) +', ' TAMANHO ', text)
+        pp_text = re.sub(r' +(xp|pp|m|cm|g|gg|xg) +', ' TAMANHO ', text)
         return pp_text
 
 
@@ -84,6 +98,8 @@ class Preprocessing:
         for text in df['DESCRICAO']:
             pp_text = Preprocessing.lower_text(text)
             pp_text = Preprocessing.replace_quantity_values(pp_text)
+            pp_text = Preprocessing.replace_unity_values(pp_text)
+            pp_text = Preprocessing.replace_liquid_values(pp_text)
             pp_text = Preprocessing.replace_size_values(pp_text)
             pp_text = Preprocessing.remove_numbers(pp_text)
             pp_text = Preprocessing.remove_punctuation(pp_text)
